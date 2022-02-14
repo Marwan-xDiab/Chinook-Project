@@ -1,0 +1,81 @@
+--What is Total sales and number of customers for each 'Genre of track ?
+
+WITH T1 AS
+  (SELECT Gen.GenreId,
+          Gen.Name AS 'Genre Name',
+          sum(INVline.UnitPrice*INVline.Quantity)AS 'Total Amount'
+   FROM Track TK
+   JOIN Genre Gen ON Gen.GenreId = TK.GenreId
+   JOIN InvoiceLine INVline ON INVline.TrackId = TK.TrackId
+   JOIN Invoice INV ON INV.InvoiceId = INVline.InvoiceId
+   JOIN Customer cus ON cus.CustomerId = INV.CustomerId
+   GROUP BY 1
+   ORDER BY 3 DESC),
+     T2 AS
+  (SELECT GenreId,
+          count(*) countinvoic
+   FROM
+     (SELECT Gen.GenreId,
+             inv.InvoiceId,
+             count(inv.CustomerId) CustomerCount
+      FROM Genre Gen
+      JOIN Track TK ON TK.GenreId = Gen.GenreId
+      JOIN InvoiceLine INVline ON INVline.TrackId = TK.TrackId
+      JOIN Invoice INV ON INV.InvoiceId = INVline.InvoiceId
+      GROUP BY Gen.GenreId,
+               inv.InvoiceId
+      ORDER BY 3 DESC)
+   GROUP BY GenreId)
+SELECT T1.'Genre Name',
+          t1.'Total Amount',
+             t2.countinvoic 'Number of Customer '
+FROM T1
+JOIN T2 ON t1.GenreId=t2.GenreId
+
+
+
+------------------------------------------------------------------------------------
+
+--What are album sales? Who sings the album ?
+SELECT alb.AlbumId,
+       art.ArtistId,
+       alb.Title 'Album',
+                 art.Name 'Artist',
+                          sum(inline.UnitPrice+inline.Quantity) AS 'Sales Amount'
+FROM Album Alb
+JOIN Artist Art ON art.ArtistId=alb.ArtistId
+JOIN Track tr ON tr.AlbumId=alb.AlbumId
+JOIN InvoiceLine INLINE ON inline.TrackId = tr.TrackId
+GROUP BY 1,
+         2      
+ORDER BY 5 DESC
+
+------------------------------------------------------------------------------------
+
+--How many songs are in each playlist?
+
+SELECT DISTINCT PL.Name AS 'PlayList',
+                Count(PLT.TrackId)
+FROM Playlist PL
+LEFT JOIN PlaylistTrack PLT ON PL.PlaylistId = PLT.PlaylistId
+GROUP BY PL.PlaylistId
+ORDER BY 2 DESC
+
+------------------------------------------------------------------------------------
+
+--What are the top 10 sales Track and the number of customers for each of them?
+
+SELECT TR.TrackId,
+       TR.Name,
+       SUM(IL.Quantity*IL.UnitPrice)Amount,
+       count(CU.CustomerId) 'Number of Customer'
+FROM Track TR
+JOIN InvoiceLine IL ON TR.TrackId = IL.TrackId
+JOIN Invoice INV ON INV.InvoiceId = IL.InvoiceId
+JOIN Customer CU ON CU.CustomerId = INV.CustomerId
+GROUP BY 1
+ORDER BY 3 DESC,
+         4 DESC
+LIMIT 10
+
+
